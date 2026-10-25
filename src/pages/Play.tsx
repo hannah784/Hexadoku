@@ -19,7 +19,7 @@ export default function Play() {
   }, [state.board, state.solution, state.markRepeated, state.checked]);
   const busy = state.status === 'solving' || state.status === 'generating';
   const action = (name: string) => {
-    const progress = state.moves > 0 || state.notes.some(Boolean) || state.board.some((v, i) => v !== state.givens[i]);
+    const progress = state.moves > 0 || state.board.some((v, i) => v !== state.givens[i]);
     if ((name === 'New puzzle' && progress) || name === 'Solve' || name === 'Reset') {
       if (pending !== name) { setPending(name); return; }
     }
@@ -28,8 +28,7 @@ export default function Play() {
       case 'New puzzle': void newGame(difficulty); break;
       case 'Solve': void solve(); break;
       case 'Cancel': if (state.status === 'solving') cancel(); break;
-      case 'Notes': dispatch({ type: 'TOGGLE', key: 'notesMode' }); break;
-      case 'markRepeated': case 'showCandidates': dispatch({ type: 'TOGGLE', key: name }); break;
+      case 'markRepeated': dispatch({ type: 'TOGGLE', key: name }); break;
       case 'Erase': dispatch({ type: 'ERASE' }); break;
       case 'Undo': dispatch({ type: 'UNDO' }); break;
       case 'Redo': dispatch({ type: 'REDO' }); break;
@@ -53,11 +52,10 @@ export default function Play() {
       </div>
     </div>
     <p className={styles.puzzleInfo}>Current puzzle: <b>{state.difficulty}</b><span><b>{256 - countEmpty(state.givens)}</b> givens</span><span>{state.unique ? 'One solution' : state.status === 'generating' ? 'Generating…' : 'Older puzzle · uniqueness unverified'}</span></p>
-    <details className={styles.keyboard}><summary onClick={() => setPending('')}>Keyboard controls</summary><p>Arrow keys move. 0–9 and A–F enter a symbol. Backspace or Delete erases. N toggles notes.</p></details>
+    <details className={styles.keyboard}><summary onClick={() => setPending('')}>Keyboard controls</summary><p>Arrow keys move. 0–9 and A–F enter a symbol. Backspace or Delete erases.</p></details>
     <div className={styles.layout}>
       <Board board={state.board} givens={state.givens} conflicts={conflicts} selected={state.selected} disabled={busy}
-        masks={state.showCandidates ? candidates : state.notes}
-        onSetCell={enter} onSelect={i => { setPending(''); selectCell(i); }} onErase={() => action('Erase')} onNotes={() => action('Notes')} />
+        onSetCell={enter} onSelect={i => { setPending(''); selectCell(i); }} onErase={() => action('Erase')} />
       <ControlPanel state={state} filled={256 - empty} pending={pending} onAction={action} onSymbol={v => enter(state.selected, v)} />
     </div>
     <ComplexityPanel emptyCount={empty} candidates={candidates} stats={state.stats} checks={state.checks} />

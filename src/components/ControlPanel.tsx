@@ -19,20 +19,18 @@ export function ControlPanel({ state: s, filled, pending, onAction, onSymbol }: 
     <div className={styles.keypad} aria-label="Symbol keypad">{Array.from({ length: 16 }, (_, i) => {
       const v = i + 1, remaining = Math.max(0, 16 - counts[v]);
       return <button key={v} onClick={() => onSymbol(v)}
-        disabled={busy || !!s.givens[s.selected] || (counts[v] >= 16 && (s.board[s.selected] !== v || s.notesMode))}
+        disabled={busy || !!s.givens[s.selected] || (counts[v] >= 16 && s.board[s.selected] !== v)}
         aria-label={`Enter ${valueToChar(v)}, ${remaining} of 16 remaining`}>
         {valueToChar(v)}<small aria-hidden="true">{remaining}</small></button>;
     })}</div>
-    <div className={styles.tools}>{['Notes', 'Erase', 'Undo', 'Redo', 'Hint'].map(label =>
-      <button key={label} onClick={() => onAction(label)} disabled={busy || (label === 'Undo' && !s.history.length) || (label === 'Redo' && !s.future.length)}
-        aria-pressed={label === 'Notes' ? s.notesMode : undefined}>{label}</button>)}</div>
+    <div className={styles.tools}>{['Erase', 'Undo', 'Redo', 'Hint'].map(label =>
+      <button key={label} onClick={() => onAction(label)} disabled={busy || (label === 'Undo' && !s.history.length) || (label === 'Redo' && !s.future.length)}>{label}</button>)}</div>
     <div className={styles.buttons}>{['Check', 'Solve', 'Reset'].map(label =>
       <button key={label} onClick={() => onAction(label)} disabled={busy}>
         {pending === label ? `Confirm ${label.toLowerCase()}` : label}</button>)}
     </div>
     {(pending || s.status === 'solving') && <button className={styles.cancel} onClick={() => onAction('Cancel')}>Cancel{s.status === 'solving' ? ' solve' : ''}</button>}
     <label><input type="checkbox" checked={s.markRepeated} onChange={() => onAction('markRepeated')} />Mark repeated symbols as I type.</label>
-    <label><input type="checkbox" checked={s.showCandidates} onChange={() => onAction('showCandidates')} />Show all candidates in empty cells.</label>
     <p className={styles.message} role="status" aria-live="polite">{s.message}</p>
   </aside>;
 }

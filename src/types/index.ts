@@ -6,7 +6,7 @@ export type Board = Uint8Array;
 export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 export const TARGETS: Record<Difficulty, number> = { Easy: 154, Medium: 115, Hard: 96 };
 export interface SolveStats { nodes: number; ms: number; usedGivensOnly: boolean }
-export interface Snapshot { board: Board; notes: Uint16Array }
+export interface Snapshot { board: Board }
 export interface GameState extends Snapshot {
   givens: Board;
   solution: Board;
@@ -22,9 +22,7 @@ export interface GameState extends Snapshot {
   moves: number;
   hints: number;
   seconds: number;
-  notesMode: boolean;
   markRepeated: boolean;
-  showCandidates: boolean;
   checked: boolean;
 }
 export interface WorkerResponse {

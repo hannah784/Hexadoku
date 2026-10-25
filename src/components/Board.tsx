@@ -5,14 +5,14 @@ import { BOX, COL, ROW, charToValue } from '../utils/sudokuLogic';
 import { Cell } from './Cell';
 import styles from '../styles/App.module.css';
 interface BoardProps {
-  board: BoardData; givens: BoardData; conflicts: Uint8Array; selected: number; masks: Uint16Array; disabled: boolean;
-  onSetCell: (index: number, value: number) => void; onSelect: (index: number) => void; onErase: () => void; onNotes: () => void;
+  board: BoardData; givens: BoardData; conflicts: Uint8Array; selected: number; disabled: boolean;
+  onSetCell: (index: number, value: number) => void; onSelect: (index: number) => void; onErase: () => void;
 }
 const getIdx = (el: EventTarget): number | null => {
   const raw = (el as HTMLElement).dataset?.idx;
   return raw === undefined ? null : Number(raw);
 };
-export function Board({ board, givens, conflicts, selected, masks, disabled, onSetCell, onSelect, onErase, onNotes }: BoardProps) {
+export function Board({ board, givens, conflicts, selected, disabled, onSetCell, onSelect, onErase }: BoardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [shake, setShake] = useState({ index: -1, n: 0 });
   const focusCell = useCallback((i: number) => {
@@ -34,7 +34,6 @@ export function Board({ board, givens, conflicts, selected, masks, disabled, onS
       case 'ArrowLeft': next = COL[i] > 0 ? i - 1 : i; break;
       case 'ArrowRight': next = COL[i] < SIDE - 1 ? i + 1 : i; break;
       case 'Delete': case 'Backspace': e.preventDefault(); onErase(); return;
-      case 'n': case 'N': e.preventDefault(); onNotes(); return;
       default: {
         const value = charToValue(e.key);
         if (value > 0) { e.preventDefault(); onSetCell(i, value); }
@@ -47,7 +46,7 @@ export function Board({ board, givens, conflicts, selected, masks, disabled, onS
   return <div ref={ref} className={styles.board} role="group" aria-label="16 by 16 Hexadoku board. Use arrow keys to move; type 0-9 or A-F."
     onChange={handleChange} onKeyDown={handleKeyDown} onFocus={handleFocus}>
     {Array.from({ length: CELLS }, (_, i) => <Cell key={i} index={i} value={board[i]} fixed={givens[i] !== 0}
-      conflict={conflicts[i] === 1} selected={selected === i} disabled={disabled} mask={masks[i]}
+      conflict={conflicts[i] === 1} selected={selected === i} disabled={disabled}
       related={ROW[i] === ROW[selected] || COL[i] === COL[selected] || BOX[i] === BOX[selected]}
       same={board[selected] !== 0 && board[selected] === board[i]} shake={shake.index === i ? shake.n : 0} />)}
   </div>;
