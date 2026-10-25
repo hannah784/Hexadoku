@@ -1,66 +1,8 @@
-export interface AlgorithmInfo {
-  name: string;
-  time: string;
-  space: string;
-  notes: string;
-}
-
-export const VARIABLES: ReadonlyArray<[string, string]> = [
-  ['n', 'Side length of the grid (n = 16). The board has n² = 256 cells and n = 16 boxes of √n × √n = 4×4.'],
-  ['k', 'Number of empty cells at the moment of solving (k ≤ n² = 256).'],
-  ['b', 'Branching factor: candidate digits tried at one node. Brute force: b ≤ 16. MRV: effective b is usually 1–3.'],
-  ['d', 'Search depth = number of cells still to fill = k.'],
-];
-
+export interface AlgorithmInfo { name: string; time: string; space: string; notes: string }
 export const ALGORITHMS: ReadonlyArray<AlgorithmInfo> = [
-  {
-    name: 'Validation / completeness check (findConflicts)',
-    time: 'O(n²)',
-    space: 'O(n²)',
-    notes:
-      'One pass over the 256 cells updates per-unit digit counters, a second pass flags duplicates. Each cell does O(1) work. The counters take 3·n² bytes.',
-  },
-  {
-    name: 'Placement test in the solver (bitmasks)',
-    time: 'O(1) per test',
-    space: 'O(n)',
-    notes:
-      'Candidates = ~(rowMask | colMask | boxMask) & 0xFFFF. Three Uint16Array(16) hold the used digits, so no row, column or box is ever scanned.',
-  },
-  {
-    name: 'Naive brute-force backtracking',
-    time: 'O(n^k) = O(16^k)',
-    space: 'O(n²)',
-    notes: 'Fills cells in fixed order and tries every digit at each, so the worst case is exponential in the number of empty cells.',
-  },
-  {
-    name: 'Implemented solver: MRV + bitmask propagation',
-    time: 'O(b^d), b ≪ n; O(k) work per node',
-    space: 'O(n²)',
-    notes:
-      'Each node scans the remaining empties (≤ 256) and branches on the cell with the fewest candidates. Forced moves (1 candidate) have b = 1, and dead ends (0 candidates) are cut immediately. The worst case remains exponential, but the effective branching factor drops sharply. Memory is the board plus O(n) masks plus a recursion stack of depth ≤ k.',
-  },
-];
-
-export const NP_SECTIONS: ReadonlyArray<{ title: string; body: string }> = [
-  {
-    title: 'Generalized Sudoku',
-    body:
-      'Fixed sizes such as 9×9 or 16×16 are finite, so as a decision problem they are trivially constant-time. Complexity classes apply to the generalization: given an n×n grid (n = m²) with some cells pre-filled, can it be completed so every row, column and m×m box contains each of 1..n exactly once?',
-  },
-  {
-    title: 'Why it is in NP',
-    body:
-      'A certificate is a fully filled grid. A verifier checks that it extends the givens and that each of the 3n units holds n distinct symbols. With counters this takes O(n²) time, polynomial in the input size. So a proposed solution is checkable in polynomial time, which is the definition of NP.',
-  },
-  {
-    title: 'Why it is NP-complete',
-    body:
-      'Yato and Seta (2003) showed that Sudoku completion is NP-complete, using a polynomial-time reduction from Latin Square Completion (the "Quasigroup With Holes" problem), which Colbourn proved NP-complete in 1984. The reduction builds, from any partial Latin square, a partial Sudoku whose box constraints can always be satisfied, so the Sudoku is completable exactly when the Latin square is. Membership in NP together with NP-hardness gives NP-completeness. Their reduction is also parsimonious, so counting solutions is #P-complete.',
-  },
-  {
-    title: 'What this means for the solver',
-    body:
-      'Unless P = NP, no algorithm solves all n×n instances in time polynomial in n. Heuristics like MRV and constraint propagation improve typical running time, and our node counter shows this, but they cannot change the worst-case exponential bound.',
-  },
+  { name: 'Conflict check', time: 'Time O(n²)', space: 'Space O(n²)', notes: 'One pass counts each symbol per row, column and box; a second flags cells whose count exceeds one. Three n² counter arrays and an n² result array are allocated.' },
+  { name: 'Placement test', time: 'Time O(1)', space: 'Space O(n) masks', notes: 'After O(n²) setup, candidates = ~(rowMask | colMask | boxMask) & 0xFFFF. Each test takes constant time and constant extra space on this 16-symbol board; the three mask arrays together use O(n) space.' },
+  { name: 'Naive backtracking', time: 'Search O(16^k)', space: 'Space O(n² + k)', notes: 'Recursive trial and error tries up to 16 symbols in each empty cell. O(16^k) bounds the search tree with constant-time placement tests on this board. A scanning placement test would add its own per-node cost.' },
+  { name: 'This solver: MRV with bit masks', time: 'Time O(n² + k · 16^k)', space: 'Space O(n² + k)', notes: 'Minimum Remaining Values scans the remaining empty cells at each node and chooses the smallest candidate set. Bit masks make each candidate test O(1). At most O(k) work per node gives a conservative O(n² + k · 16^k) bound for this board (O(n² + k · n^k) with word-sized n-symbol masks). Forced moves and earlier dead ends help in practice; heuristics do not guarantee a better worst-case asymptotic bound.' },
+  { name: 'Puzzle generation with uniqueness test', time: 'Up to 256 solver calls', space: 'Space O(n² + k)', notes: 'A shuffled valid full grid takes O(n²) time and space. Remove cells individually, counting solutions up to two; keep each removal only when exactly one solution is proven. At most n² uniqueness calls are made: O(n² · S) time, where S is a uniqueness search cost, with the same exponential worst-case search bound as MRV. Each call has a 50,000-node budget; inconclusive checks retain the clue, so a puzzle may have more givens than its target.' },
 ];

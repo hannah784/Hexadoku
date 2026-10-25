@@ -1,46 +1,27 @@
 import type { SolveStats } from '../types';
-import { SIDE } from '../types';
-import { ALGORITHMS, NP_SECTIONS, VARIABLES } from '../utils/complexityData';
+import { popcount } from '../utils/sudokuLogic';
+import { ALGORITHMS } from '../utils/complexityData';
 import styles from '../styles/App.module.css';
-
-interface Props {
-  emptyCount: number;
-  stats: SolveStats | null;
-}
-
-export function ComplexityPanel({ emptyCount, stats }: Props) {
-  const exp = (emptyCount * Math.log10(SIDE)).toFixed(1);
-  return (
-    <aside className={styles.panel} aria-label="Complexity analysis">
-      <h2>Complexity analysis</h2>
-
-      <h3>Live numbers for this board</h3>
-      <ul>
-        <li>Empty cells k = <b>{emptyCount}</b></li>
-        <li>Brute-force worst case: 16^{emptyCount} ≈ <b>10^{exp}</b> candidate fillings</li>
-        <li>
-          {stats
-            ? <>Last solve (MRV + bitmasks): <b>{stats.nodes.toLocaleString()}</b> search nodes in <b>{stats.ms.toFixed(1)} ms</b></>
-            : 'Press Solve to see how many nodes the MRV solver actually visits.'}
-        </li>
-      </ul>
-
-      <h3>Algorithms in <code>sudokuLogic.ts</code></h3>
-      {ALGORITHMS.map((a) => (
-        <div key={a.name} className={styles.algo}>
-          <strong>{a.name}</strong>
-          <div>Time: <code>{a.time}</code> · Space: <code>{a.space}</code></div>
-          <small>{a.notes}</small>
-        </div>
-      ))}
-
-      <h3>Variables (16×16 context)</h3>
-      <dl>
-        {VARIABLES.map(([k, v]) => (<div key={k}><dt><code>{k}</code></dt><dd>{v}</dd></div>))}
-      </dl>
-
-      <h3>P vs NP</h3>
-      {NP_SECTIONS.map((s) => (<section key={s.title}><h4>{s.title}</h4><p>{s.body}</p></section>))}
-    </aside>
-  );
+interface Props { emptyCount: number; candidates: Uint16Array; stats: SolveStats | null; checks: number }
+export function ComplexityPanel({ emptyCount, candidates, stats, checks }: Props) {
+  const log = emptyCount * Math.log10(16), exponent = Math.floor(log), mantissa = 10 ** (log - exponent);
+  let singles = 0, total = 0;
+  candidates.forEach(mask => { const count = popcount(mask); total += count; if (count === 1) singles++; });
+  const rows = [
+    ['Empty cells, k', emptyCount, ''],
+    ['Brute-force worst case, 16^k', `${mantissa.toFixed(2)} × 10^${exponent}`, 'Candidate fillings if every digit were tried in every empty cell.'],
+    ['Cells with one candidate', singles, 'The solver fills these without branching.'],
+    ['Average candidates per empty cell', emptyCount ? (total / emptyCount).toFixed(1) : '0.0', ''],
+    ['Last solve', stats ? `${stats.nodes.toLocaleString()} nodes · ${stats.ms.toFixed(1)} ms` : 'Not run', 'Press Solve to count the nodes the solver actually visits.'],
+  ];
+  return <section className={styles.complexity} aria-label="Complexity analysis">
+    <div><h2>Complexity analysis</h2><p className={styles.hint}>Live numbers for this board.</p>
+      <dl className={styles.statistics}>{rows.map(([label, value, note]) => <div key={label}><dt>{label}</dt><dd>{value}</dd>{note && <small>{note}</small>}</div>)}</dl>
+      <p className={styles.definition}>n = grid side length (16); k = currently empty cells. Bounds assume a 16-bit mask fits one machine word. Generalized larger grids require additional words.</p>
+    </div>
+    <div><h3>Algorithms used on this page</h3>{ALGORITHMS.map(a => <details key={a.name} className={styles.algo} open={a.name === 'Conflict check' || a.name === 'Placement test'}>
+      <summary><strong>{a.name}</strong><span>{a.time} · {a.space}</span></summary><p>{a.notes}</p>
+      {a.name.startsWith('Puzzle generation') && <p>This puzzle used {checks} uniqueness checks.</p>}
+    </details>)}</div>
+  </section>;
 }
