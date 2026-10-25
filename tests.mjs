@@ -165,4 +165,3 @@ test('unmount rejects pending work and ignores late generation results', async (
   worker.reply({ board: sample.solution, solution: sample.solution, checks: 0 }); await pending;
   assert.ok(worker.terminated); assert.deepEqual(h.state.board, before);
 });
-
