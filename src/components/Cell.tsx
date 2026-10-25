@@ -4,7 +4,7 @@ import { COL, ROW, valueToChar } from '../utils/sudokuLogic';
 import styles from '../styles/App.module.css';
 export interface CellProps {
   index: number; value: number; fixed: boolean; conflict: boolean; selected: boolean;
-  related: boolean; same: boolean; mask: number; shake: number; disabled: boolean;
+  related: boolean; same: boolean; shake: number; disabled: boolean;
 }
 const noop = () => undefined;
 function CellImpl(p: CellProps) {
@@ -17,9 +17,8 @@ function CellImpl(p: CellProps) {
   return <div className={cls}>
     <input data-idx={p.index} value={valueToChar(p.value)} readOnly={p.fixed || p.disabled} onChange={noop}
       tabIndex={p.selected ? 0 : -1} inputMode="text" autoComplete="off" spellCheck={false}
-      aria-label={`Row ${r + 1}, column ${c + 1}${p.fixed ? ', given' : ''}${p.mask && !p.value ? ', notes ' + Array.from({ length: SIDE }, (_, v) => p.mask & (1 << v) ? valueToChar(v + 1) : '').join('') : ''}`}
+      aria-label={`Row ${r + 1}, column ${c + 1}${p.fixed ? ', given' : ''}`}
       aria-invalid={p.conflict} />
-    {!p.value && p.mask !== 0 && <span className={styles.candidates} aria-hidden="true">{Array.from({ length: SIDE }, (_, v) => <span key={v}>{p.mask & (1 << v) ? valueToChar(v + 1) : ''}</span>)}</span>}
   </div>;
 }
 export const areEqual = (a: CellProps, b: CellProps) => Object.keys(a).every(key => a[key as keyof CellProps] === b[key as keyof CellProps]);

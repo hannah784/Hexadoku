@@ -1,19 +1,19 @@
 import styles from '../styles/Pages.module.css';
 const CONTROLS = [
   ['Keypad or keys', 'Enter a symbol with the on-screen keypad or 0–9, A–F. Arrow keys move between cells; Backspace or Delete erases.'],
-  ['Notes', 'Turn on notes mode (N) to pencil in candidates. Placing a symbol removes it from the notes of its row, column and box. Erase clears the selected cell or its notes.'],
+  ['Erase', 'Clears the selected editable cell.'],
   ['Hint', 'Reveals one correct cell and counts toward your hint total. The timer continues while you play.'],
   ['Check', 'Marks repeated symbols and entries that differ from the unique solution. Errors have a hatch pattern and a corner flag.'],
   ['Solve', 'Click twice to fill in the answer. A Web Worker solves your entries, falling back to the original givens if needed. Cancel stops the worker.'],
-  ['Reset, Undo, Redo', 'Reset requires a second click and returns to the original puzzle. Undo and Redo step through your entries and notes. Moves and hints count actions already taken.'],
+  ['Reset, Undo, Redo', 'Reset requires a second click and returns to the original puzzle. Undo and Redo step through your entries. Moves and hints count actions already taken.'],
 ];
 const BUILT_WITH = [
   ['Solver', 'Backtracking that picks the cell with the fewest candidates, using 16-bit masks for constant-time checks.'],
   ['Background thread', 'Solving and puzzle generation run in Web Workers. Copies of the flat board are sent as transferable buffers.'],
-  ['Board storage', 'A flat 256-byte array keeps memory small. Notes use a 16-bit mask per cell.'],
-  ['Rendering', 'Memoized cells update when their value, candidates, highlighting or other visible state changes.'],
-  ['State', 'A single reducer holds the board, notes, undo/redo history (200 steps), timer and solver statistics.'],
-  ['Persistence', 'The game saves automatically to localStorage, including progress, notes, difficulty, timer and move history.'],
+  ['Board storage', 'A flat 256-byte array keeps memory small.'],
+  ['Rendering', 'Memoized cells update when their value, highlighting or other visible state changes.'],
+  ['State', 'A single reducer holds the board, undo/redo history (200 steps), timer and solver statistics.'],
+  ['Persistence', 'The game saves automatically to localStorage, including progress, difficulty, timer and move history.'],
 ];
 export default function About() {
   return <article className={styles.prose}><h1>About</h1>

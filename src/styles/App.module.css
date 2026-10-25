@@ -45,7 +45,6 @@
 .cell input:focus { outline:2px solid var(--accent); outline-offset:-2px; }
 .invalid { color:var(--error); background:repeating-linear-gradient(135deg,transparent,transparent 5px,var(--error-bg) 5px,var(--error-bg) 8px),var(--surface); }
 .invalid::after { content:''; position:absolute; right:0; top:0; border-top:7px solid var(--error); border-left:7px solid transparent; pointer-events:none; }
-.candidates { position:absolute; inset:2px; display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(4,1fr); pointer-events:none; color:var(--muted); font:500 clamp(5px,.58vw,8px)/1 ui-monospace,monospace; text-align:center; align-items:center; }
 .controls { border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:16px; box-shadow:0 1px 2px #00000009; }
 .metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; min-height:64px; }
 .metrics span { display:block; color:var(--muted); font:10px ui-monospace,monospace; text-transform:uppercase; letter-spacing:.6px; }
@@ -57,7 +56,7 @@
 .keypad { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
 .keypad button { position:relative; min-height:48px; background:var(--soft); font:600 20px ui-monospace,monospace; }
 .keypad small { position:absolute; right:6px; top:5px; font:10px system-ui,sans-serif; color:var(--muted); }
-.tools { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; padding:10px 0; border-bottom:1px solid var(--line); }
+.tools { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; padding:10px 0; border-bottom:1px solid var(--line); }
 .tools button { padding:6px 2px; font-size:12px; }
 .buttons { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin:12px 0; }
 .buttons button { padding:6px; }
@@ -90,7 +89,6 @@
   .playHeader { flex-direction:column; align-items:start; }
   .layout { grid-template-columns:minmax(0,1fr); gap:16px; max-width:640px; margin:auto; }
   .cell input { font-size:clamp(12px,3vw,23px); }
-  .candidates { font-size:clamp(5px,1.15vw,8px); inset:1px; }
   .complexity { grid-template-columns:minmax(0,1fr); gap:24px; }
   .controls { display:flex; flex-direction:column; }
   .keypad { order:-1; margin-bottom:16px; }

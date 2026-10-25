@@ -60,16 +60,14 @@ test('candidate masks agree with independent row/column/box placement scans', ()
     assert.equal(masks[i], expected);
   }
 });
-test('notes, entries, peer note cleanup, erasure, undo/redo and givens protection', () => {
+test('entries, erasure, undo/redo and givens protection', () => {
   let s = make(); const i = s.board.findIndex(v => !v), fixed = s.givens.findIndex(Boolean), value = s.solution[i];
   const before = s; s = l.gameReducer(s, { type: 'EDIT', index: fixed, value: 0 }); assert.equal(s, before);
   s = l.gameReducer(s, { type: 'SELECT', index: i });
-  s = l.gameReducer(s, { type: 'TOGGLE', key: 'notesMode' });
-  s = l.gameReducer(s, { type: 'EDIT', index: i, value }); assert.equal(s.notes[i], 1 << (value - 1)); assert.equal(s.board[i], 0);
-  s = l.gameReducer(s, { type: 'ERASE' }); assert.equal(s.notes[i], 0); assert.equal(s.notesMode, true);
-  s = l.gameReducer(s, { type: 'UNDO' }); assert.equal(s.notes[i], 1 << (value - 1));
-  s = l.gameReducer(s, { type: 'REDO' }); assert.equal(s.notes[i], 0);
-  s = l.gameReducer(s, { type: 'TOGGLE', key: 'notesMode' });
+  s = l.gameReducer(s, { type: 'EDIT', index: i, value }); assert.equal(s.board[i], value);
+  s = l.gameReducer(s, { type: 'ERASE' }); assert.equal(s.board[i], 0);
+  s = l.gameReducer(s, { type: 'UNDO' }); assert.equal(s.board[i], value);
+  s = l.gameReducer(s, { type: 'REDO' }); assert.equal(s.board[i], 0);
   s = l.gameReducer(s, { type: 'EDIT', index: i, value }); assert.equal(s.board[i], value); assert.equal(s.future.length, 0);
   s = l.gameReducer(s, { type: 'UNDO' }); assert.equal(s.board[i], 0);
   s = l.gameReducer(s, { type: 'REDO' }); assert.equal(s.board[i], value);
@@ -88,7 +86,7 @@ test('check, hint counters, timer, completion and solver statistics', () => {
   assert.equal(l.gameReducer(s, { type: 'TICK', seconds: 2 }).seconds, 5);
   s = l.gameReducer(s, { type: 'UNDO' }); assert.equal(s.status, 'idle');
 });
-test('autosave round trip preserves typed arrays, history, notes, difficulty and timer; malformed saves rejected', () => {
+test('autosave round trip preserves typed arrays, history, difficulty and timer; malformed saves rejected', () => {
   stored = new Map(); let s = make(); const i = s.board.findIndex(v => !v);
   s = l.gameReducer(s, { type: 'SELECT', index: i });
   s = l.gameReducer(s, { type: 'EDIT', index: i, value: s.solution[i] });
@@ -97,6 +95,27 @@ test('autosave round trip preserves typed arrays, history, notes, difficulty and
   assert.equal(loaded.seconds, 42); assert.equal(loaded.hints, 2); assert.equal(loaded.difficulty, 'Hard'); assert.ok(l.hasUnfinishedGame());
   stored.set(l.AUTOSAVE_KEY, '{}'); assert.equal(l.readSaved(), null);
   stored.set(l.AUTOSAVE_KEY, '{bad'); assert.equal(l.readSaved(), null);
+});
+test('old candidate settings are discarded while board progress and undo/redo survive restoration', () => {
+  stored = new Map(); let s = make(); const i = s.board.findIndex(v => !v);
+  s = l.gameReducer(s, { type: 'EDIT', index: i, value: s.solution[i] });
+  s = l.gameReducer(s, { type: 'UNDO' });
+  l.saveGame(s);
+  const saved = JSON.parse(stored.get(l.AUTOSAVE_KEY));
+  saved.notes = Array(256).fill(65535); saved.notesMode = true; saved.showCandidates = true;
+  for (const step of [...saved.history, ...saved.future]) step.notes = saved.notes;
+  stored.set(l.AUTOSAVE_KEY, JSON.stringify(saved));
+  const restored = l.readSaved(); assert.deepEqual(restored.board, s.board); assert.deepEqual(restored.future, s.future);
+  for (const key of ['notes', 'notesMode', 'showCandidates']) assert.equal(key in restored, false);
+  const redone = l.gameReducer(restored, { type: 'REDO' }); assert.equal(redone.board[i], s.solution[i]);
+  l.saveGame(redone); const resaved = JSON.parse(stored.get(l.AUTOSAVE_KEY));
+  for (const key of ['notes', 'notesMode', 'showCandidates']) assert.equal(key in resaved, false);
+  assert.ok(resaved.history.every(step => !('notes' in step)));
+});
+test('mark repeated symbols remains independently toggleable', () => {
+  const s = make(); const toggled = l.gameReducer(s, { type: 'TOGGLE', key: 'markRepeated' });
+  assert.equal(toggled.markRepeated, false);
+  assert.equal(l.gameReducer(toggled, { type: 'TOGGLE', key: 'markRepeated' }).markRepeated, true);
 });
 test('older board-only saves remain available for background migration', () => {
   stored = new Map([['hexadoku:autosave:v1', JSON.stringify({ board: Array.from(sample.puzzle), givens: Array.from(sample.puzzle) })]]);
