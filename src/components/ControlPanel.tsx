@@ -1,35 +1,38 @@
-import type { GameStatus } from '../types';
+import type { GameState } from '../types';
+import { valueToChar } from '../utils/sudokuLogic';
 import styles from '../styles/App.module.css';
-
 interface Props {
-  status: GameStatus;
-  message: string;
-  canUndo: boolean;
-  onNew: () => void;
-  onCheck: () => void;
-  onSolve: () => void;
-  onReset: () => void;
-  onUndo: () => void;
-  onSave: () => void;
-  onLoad: () => void;
+  state: GameState; filled: number; pending: string;
+  onAction: (action: string) => void;
+  onSymbol: (value: number) => void;
 }
-
-export function ControlPanel(p: Props) {
-  const solving = p.status === 'solving';
-  return (
-    <div className={styles.controls}>
-      <div className={styles.buttons}>
-        <button onClick={p.onNew} disabled={solving}>New puzzle</button>
-        <button onClick={p.onCheck} disabled={solving}>Check</button>
-        <button onClick={p.onSolve} disabled={solving} className={styles.primary}>
-          {solving ? '⏳ Solving…' : 'Solve'}
-        </button>
-        <button onClick={p.onUndo} disabled={solving || !p.canUndo}>Undo</button>
-        <button onClick={p.onReset} disabled={solving}>Reset</button>
-        <button onClick={p.onSave} disabled={solving}>Save</button>
-        <button onClick={p.onLoad} disabled={solving}>Load</button>
-      </div>
-      <p className={styles.message} role="status" aria-live="polite">{p.message || '\u00A0'}</p>
+export function ControlPanel({ state: s, filled, pending, onAction, onSymbol }: Props) {
+  const busy = s.status === 'solving' || s.status === 'generating';
+  const counts = new Uint16Array(17); s.board.forEach(v => counts[v]++);
+  const time = `${Math.floor(s.seconds / 60).toString().padStart(2, '0')}:${(s.seconds % 60).toString().padStart(2, '0')}`;
+  return <aside className={styles.controls} aria-label="Gameplay controls">
+    <div className={styles.metrics}>
+      {[['Time', time], ['Moves', s.moves], ['Hints', s.hints], ['Filled', filled]].map(([label, value]) =>
+        <div key={label}><span>{label}</span><strong>{value}</strong>{label === 'Filled' && <small>of 256</small>}</div>)}
     </div>
-  );
+    <progress value={filled} max={256} aria-label="Filled cells" />
+    <div className={styles.keypad} aria-label="Symbol keypad">{Array.from({ length: 16 }, (_, i) => {
+      const v = i + 1, remaining = Math.max(0, 16 - counts[v]);
+      return <button key={v} onClick={() => onSymbol(v)}
+        disabled={busy || !!s.givens[s.selected] || (counts[v] >= 16 && (s.board[s.selected] !== v || s.notesMode))}
+        aria-label={`Enter ${valueToChar(v)}, ${remaining} of 16 remaining`}>
+        {valueToChar(v)}<small aria-hidden="true">{remaining}</small></button>;
+    })}</div>
+    <div className={styles.tools}>{['Notes', 'Erase', 'Undo', 'Redo', 'Hint'].map(label =>
+      <button key={label} onClick={() => onAction(label)} disabled={busy || (label === 'Undo' && !s.history.length) || (label === 'Redo' && !s.future.length)}
+        aria-pressed={label === 'Notes' ? s.notesMode : undefined}>{label}</button>)}</div>
+    <div className={styles.buttons}>{['Check', 'Solve', 'Reset'].map(label =>
+      <button key={label} onClick={() => onAction(label)} disabled={busy}>
+        {pending === label ? `Confirm ${label.toLowerCase()}` : label}</button>)}
+    </div>
+    {(pending || s.status === 'solving') && <button className={styles.cancel} onClick={() => onAction('Cancel')}>Cancel{s.status === 'solving' ? ' solve' : ''}</button>}
+    <label><input type="checkbox" checked={s.markRepeated} onChange={() => onAction('markRepeated')} />Mark repeated symbols as I type.</label>
+    <label><input type="checkbox" checked={s.showCandidates} onChange={() => onAction('showCandidates')} />Show all candidates in empty cells.</label>
+    <p className={styles.message} role="status" aria-live="polite">{s.message}</p>
+  </aside>;
 }

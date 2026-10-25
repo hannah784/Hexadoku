@@ -1,69 +1,27 @@
 import styles from '../styles/Pages.module.css';
-
-const KEYS: ReadonlyArray<[string, string]> = [
-  ['0–9, A–F', 'Enter a symbol (case-insensitive)'],
-  ['Arrow keys', 'Move between cells'],
-  ['Delete', 'Clear the cell'],
+const CONTROLS = [
+  ['Keypad or keys', 'Enter a symbol with the on-screen keypad or 0–9, A–F. Arrow keys move between cells; Backspace or Delete erases.'],
+  ['Notes', 'Turn on notes mode (N) to pencil in candidates. Placing a symbol removes it from the notes of its row, column and box. Erase clears the selected cell or its notes.'],
+  ['Hint', 'Reveals one correct cell and counts toward your hint total. The timer continues while you play.'],
+  ['Check', 'Marks repeated symbols and entries that differ from the unique solution. Errors have a hatch pattern and a corner flag.'],
+  ['Solve', 'Click twice to fill in the answer. A Web Worker solves your entries, falling back to the original givens if needed. Cancel stops the worker.'],
+  ['Reset, Undo, Redo', 'Reset requires a second click and returns to the original puzzle. Undo and Redo step through your entries and notes. Moves and hints count actions already taken.'],
 ];
-
-const BUILT_WITH: ReadonlyArray<[string, string]> = [
-  ['Solver', 'Backtracking that always picks the cell with the fewest candidates, using 16-bit masks for constant-time checks.'],
-  ['Background thread', 'The solver runs in a Web Worker. The board is handed over as a transferable buffer, with no copying.'],
-  ['Board storage', 'A flat 256-byte array instead of nested objects, which keeps memory small and garbage collection quiet.'],
-  ['Rendering', 'Each cell re-renders only when its own value or state changes, so a keystroke touches one cell, not 256.'],
-  ['State', 'A single reducer holds the board, undo history (200 steps), status and solver stats.'],
-  ['Persistence', 'The board autosaves to localStorage. A separate slot is available through Save and Load.'],
+const BUILT_WITH = [
+  ['Solver', 'Backtracking that picks the cell with the fewest candidates, using 16-bit masks for constant-time checks.'],
+  ['Background thread', 'Solving and puzzle generation run in Web Workers. Copies of the flat board are sent as transferable buffers.'],
+  ['Board storage', 'A flat 256-byte array keeps memory small. Notes use a 16-bit mask per cell.'],
+  ['Rendering', 'Memoized cells update when their value, candidates, highlighting or other visible state changes.'],
+  ['State', 'A single reducer holds the board, notes, undo/redo history (200 steps), timer and solver statistics.'],
+  ['Persistence', 'The game saves automatically to localStorage, including progress, notes, difficulty, timer and move history.'],
 ];
-
 export default function About() {
-  return (
-    <article className={styles.prose}>
-      <h1>About</h1>
-      <p className={styles.lead}>
-        Hexadoku is the 16×16 cousin of Sudoku. It is also a small teaching tool: it shows how a solver works and why
-        puzzles like this are hard for computers in general.
-      </p>
-
-      <h2>The rules</h2>
-      <p>
-        The grid has 256 cells split into sixteen 4×4 boxes. Each row, column and box must contain every symbol from
-        0 to F exactly once. Cells in grey are givens and cannot be changed. A cell turns red when it repeats a symbol
-        in its row, column or box.
-      </p>
-
-      <h2>Controls</h2>
-      <dl className={styles.keys}>
-        {KEYS.map(([k, v]) => (
-          <div key={k}><dt><kbd>{k}</kbd></dt><dd>{v}</dd></div>
-        ))}
-      </dl>
-      <p>
-        <b>Check</b> reports conflicts, <b>Undo</b> steps back, <b>Reset</b> returns to the original puzzle and{' '}
-        <b>Solve</b> fills in an answer. If your entries have no solution, Solve falls back to the original givens.
-      </p>
-
-      <h2>New puzzles</h2>
-      <p>
-        Each puzzle starts from a valid full grid that is shuffled at random, then 45% of its cells are kept as givens.
-        A solution always exists, but it is not guaranteed to be the only one.
-      </p>
-
-      <h2>Under the hood</h2>
-      <dl className={styles.specs}>
-        {BUILT_WITH.map(([k, v]) => (
-          <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
-        ))}
-      </dl>
-
-      <h2>Why it is hard</h2>
-      <p>
-        Solving Sudoku on a general n×n grid is NP-complete: a finished grid is quick to check, but no known method
-        finds one quickly for every puzzle. The Play page has the full explanation, with live numbers from your board.
-      </p>
-
-      <div className={styles.actions}>
-        <a href="#/play" className={`${styles.btn} ${styles.btnPrimary}`}>Start playing</a>
-      </div>
-    </article>
-  );
+  return <article className={styles.prose}><h1>About</h1>
+    <p className={styles.lead}>Hexadoku is the 16×16 cousin of Sudoku. It is also a small teaching tool: it shows how a solver works and why puzzles like this are hard for computers in general.</p>
+    <h2>The rules</h2><p>The grid has 256 cells split into sixteen 4×4 boxes. Each row, column and box must contain every symbol from 0 to F exactly once. Grey cells are givens and cannot be changed. Repeated symbols are marked in red, with a hatch pattern and a corner flag.</p>
+    <h2>Controls</h2><dl className={styles.keys}>{CONTROLS.map(([k,v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+    <h2>New puzzles</h2><p>Each puzzle starts from a valid full grid that is shuffled at random. Cells are removed one by one, and a removal is kept only if exactly one solution remains. Easy targets 154 givens, Medium 115 and Hard 96. Uniqueness takes priority: a puzzle can retain more clues when further checks reach the search budget. Changing difficulty selects your next puzzle. New puzzle requires a second click when you have progress to lose.</p>
+    <h2>Under the hood</h2><dl className={styles.specs}>{BUILT_WITH.map(([k,v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+    <h2>Why it is hard</h2><p>Generalized Sudoku completion is NP-complete: a proposed solution is verifiable in polynomial time, but no polynomial-time algorithm is known for all instances. A fixed 16×16 board is finite; asymptotic complexity describes the generalized problem. The Play page shows the algorithms and live numbers for your board.</p>
+  </article>;
 }

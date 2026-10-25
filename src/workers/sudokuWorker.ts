@@ -1,20 +1,16 @@
-import { solve } from '../utils/sudokuLogic';
-import type { WorkerResponse } from '../types';
-
-const MAX_NODES = 1_000_000;
+import { countSolutions, generatePuzzle, solve } from '../utils/sudokuLogic';
+import { CELLS, TARGETS, type WorkerRequest, type WorkerResponse } from '../types';
 const ctx = self as unknown as Worker;
-
-// The main thread TRANSFERS the buffer (zero-copy); we solve in place and transfer it back.
-ctx.onmessage = (e: MessageEvent<Uint8Array>) => {
-  const board = e.data;
+ctx.onmessage = (e: MessageEvent<WorkerRequest>) => {
   const t0 = performance.now();
-  const r = solve(board, { maxNodes: MAX_NODES });
-  const msg: WorkerResponse = {
-    solved: r.solved,
-    aborted: r.aborted,
-    nodes: r.nodes,
-    ms: performance.now() - t0,
-    board,
-  };
-  ctx.postMessage(msg, [board.buffer]);
+  if (e.data.kind === 'generate') {
+    const { puzzle, solution, checks } = generatePuzzle(TARGETS[e.data.difficulty] / CELLS);
+    const msg: WorkerResponse = { solved: true, aborted: false, nodes: 0, ms: performance.now() - t0, board: puzzle, solution, checks };
+    ctx.postMessage(msg, [puzzle.buffer, solution.buffer]);
+  } else {
+    const board = e.data.board;
+    const uniqueness = e.data.kind === 'restore' ? countSolutions(board) : null;
+    const result = solve(board, { maxNodes: 1_000_000 });
+    ctx.postMessage({ ...result, unique: uniqueness?.count === 1 && !uniqueness.aborted, ms: performance.now() - t0, board } satisfies WorkerResponse, [board.buffer]);
+  }
 };

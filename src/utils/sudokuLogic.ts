@@ -157,6 +157,53 @@ export function solve(board: Board, opts: SolveOptions = {}): SolveResult {
   return { solved, aborted, nodes };
 }
 
+/** Count up to two solutions. Exhausting the budget never certifies uniqueness. */
+export function countSolutions(board: Board, maxNodes = 50_000): { count: number; aborted: boolean; nodes: number } {
+  const rows = new Uint16Array(SIDE), cols = new Uint16Array(SIDE), boxes = new Uint16Array(SIDE);
+  const empty: number[] = [];
+  for (let i = 0; i < CELLS; i++) {
+    const v = board[i];
+    if (!v) { empty.push(i); continue; }
+    const bit = 1 << (v - 1);
+    if ((rows[ROW[i]] | cols[COL[i]] | boxes[BOX[i]]) & bit) return { count: 0, aborted: false, nodes: 0 };
+    rows[ROW[i]] |= bit; cols[COL[i]] |= bit; boxes[BOX[i]] |= bit;
+  }
+  let count = 0, nodes = 0, aborted = false;
+  const search = (depth: number) => {
+    if (depth === empty.length) { count++; return; }
+    if (++nodes > maxNodes) { aborted = true; return; }
+    let best = depth, mask = 0, size = SIDE + 1;
+    for (let j = depth; j < empty.length; j++) {
+      const i = empty[j], m = ~(rows[ROW[i]] | cols[COL[i]] | boxes[BOX[i]]) & FULL;
+      const c = popcount(m);
+      if (c < size) { best = j; mask = m; size = c; if (c <= 1) break; }
+    }
+    if (!size) return;
+    [empty[depth], empty[best]] = [empty[best], empty[depth]];
+    const i = empty[depth], r = ROW[i], c = COL[i], b = BOX[i];
+    while (mask && count < 2 && !aborted) {
+      const bit = mask & -mask; mask ^= bit;
+      rows[r] |= bit; cols[c] |= bit; boxes[b] |= bit;
+      search(depth + 1);
+      rows[r] &= ~bit; cols[c] &= ~bit; boxes[b] &= ~bit;
+    }
+    [empty[depth], empty[best]] = [empty[best], empty[depth]];
+  };
+  search(0);
+  return { count, aborted, nodes };
+}
+
+/** O(n²) mask setup followed by O(1) candidate tests per cell. */
+export function candidateMasks(board: Board): Uint16Array {
+  const rows = new Uint16Array(SIDE), cols = new Uint16Array(SIDE), boxes = new Uint16Array(SIDE);
+  for (let i = 0; i < CELLS; i++) if (board[i]) {
+    const bit = 1 << (board[i] - 1);
+    rows[ROW[i]] |= bit; cols[COL[i]] |= bit; boxes[BOX[i]] |= bit;
+  }
+  return Uint16Array.from(board, (v, i) => v ? 0 : ~(rows[ROW[i]] | cols[COL[i]] | boxes[BOX[i]]) & FULL);
+}
+export { popcount };
+
 // ---------- Generation ----------
 function shuffle<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -175,11 +222,11 @@ function shuffledAxis(): number[] {
  * Builds a random valid full grid from the canonical pattern
  * (4*(r%4) + floor(r/4) + c) mod 16, then applies validity-preserving
  * shuffles (digits, rows within bands, bands, columns within stacks, stacks).
- * Then removes cells until `fillRatio` (>= 0.40) remain as givens.
- * The puzzle is solvable by construction (uniqueness is not enforced).
+ * Removes individual cells only after a uniqueness check succeeds.
+ * Budget-limited checks retain the clue; at most 256 checks are made.
  */
-export function generatePuzzle(fillRatio = 0.45): { puzzle: Board; solution: Board } {
-  const ratio = Math.max(0.4, Math.min(1, fillRatio));
+export function generatePuzzle(fillRatio = 0.45): { puzzle: Board; solution: Board; checks: number } {
+  const ratio = Math.max(0, Math.min(1, fillRatio));
   const rowOrder = shuffledAxis();
   const colOrder = shuffledAxis();
   const digits = shuffle(Array.from({ length: SIDE }, (_, i) => i));
@@ -193,7 +240,14 @@ export function generatePuzzle(fillRatio = 0.45): { puzzle: Board; solution: Boa
   }
   const keep = Math.ceil(CELLS * ratio);
   const order = shuffle(Array.from({ length: CELLS }, (_, i) => i));
-  const puzzle = new Uint8Array(CELLS);
-  for (let k = 0; k < keep; k++) puzzle[order[k]] = solution[order[k]];
-  return { puzzle, solution };
+  const puzzle = solution.slice();
+  let remaining = CELLS, checks = 0;
+  for (const i of order) {
+    if (remaining <= keep) break;
+    const v = puzzle[i]; puzzle[i] = 0;
+    const result = countSolutions(puzzle); checks++;
+    if (result.count === 1 && !result.aborted) remaining--;
+    else puzzle[i] = v;
+  }
+  return { puzzle, solution, checks };
 }
