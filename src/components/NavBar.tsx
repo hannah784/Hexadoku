@@ -20,9 +20,9 @@ export function NavBar({ current }: { current: Route }) {
     try { localStorage.setItem('hexadoku:theme', next); } catch { /* Theme still works without storage. */ }
   };
   return <header className={styles.nav}>
+    <a href="#/" className={styles.brand} aria-label="Hexadoku home"><img src={logo} alt="Hexadoku" width="1033" height="241" /></a>
     <nav aria-label="Main">{LINKS.map(l => <a key={l.route} href={l.href} className={styles.navLink} aria-current={current === l.route ? 'page' : undefined}>{l.label}</a>)}
       <button onClick={toggle} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>{theme === 'dark' ? 'Light' : 'Dark'}</button>
     </nav>
-    <a href="#/" className={styles.brand} aria-label="Hexadoku home"><img src={logo} alt="Hexadoku" width="1623" height="380" /></a>
   </header>;
 }
