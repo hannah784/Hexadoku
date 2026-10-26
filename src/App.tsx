@@ -11,7 +11,7 @@ export default function App() {
   return (
     <div className={styles.app}>
       <NavBar current={route} />
-      <main className={route === 'play' ? undefined : pageStyles.page}>
+      <main className={`${styles.content} ${route === 'home' ? styles.homeContent : route === 'about' ? pageStyles.page : ''}`}>
         {route === 'home' && <Landing />}
         {route === 'about' && <About />}
         {route === 'play' && <Play />}
