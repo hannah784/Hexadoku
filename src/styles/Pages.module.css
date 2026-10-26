@@ -1,5 +1,5 @@
 .nav { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:58px; border-bottom:1px solid var(--line); margin-bottom:24px; }
-.brand { display:flex; align-items:center; min-width:0; min-height:44px; padding:2px 4px; border-radius:4px; background:#fff; }
+.brand { display:flex; align-items:center; min-width:0; min-height:44px; padding:2px 4px; border-radius:4px; }
 .brand img { display:block; max-height:28px; width:auto; max-width:100%; height:auto; }
 .nav nav { display:flex; align-items:center; gap:14px; }
 .navLink { display:inline-flex; align-items:center; min-height:44px; padding:0 10px; color:var(--muted); text-decoration:none; border-bottom:2px solid transparent; }
